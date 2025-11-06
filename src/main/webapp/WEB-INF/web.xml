@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns="https://jakarta.ee/xml/ns/jakartaee"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee https://jakarta.ee/xml/ns/jakartaee/web-app_6_0.xsd"
+         version="6.0">
+
+    <display-name>sentiment-mvc</display-name>
+    <description>MVC-based Java web application for sentiment analysis</description>
+
+    <!-- 
+        Servlet Mappings:
+        - Add servlet declarations and mappings here if not using @WebServlet annotation
+        - Example below shows how to configure servlets manually
+    -->
+
+    <!-- 
+    <servlet>
+        <servlet-name>AuthServlet</servlet-name>
+        <servlet-class>com.team.app.controller.AuthServlet</servlet-class>
+    </servlet>
+    
+    <servlet-mapping>
+        <servlet-name>AuthServlet</servlet-name>
+        <url-pattern>/login</url-pattern>
+        <url-pattern>/register</url-pattern>
+        <url-pattern>/logout</url-pattern>
+    </servlet-mapping>
+    -->
+
+    <!-- 
+    <servlet>
+        <servlet-name>JobServlet</servlet-name>
+        <servlet-class>com.team.app.controller.JobServlet</servlet-class>
+    </servlet>
+    
+    <servlet-mapping>
+        <servlet-name>JobServlet</servlet-name>
+        <url-pattern>/jobs</url-pattern>
+        <url-pattern>/jobs/*</url-pattern>
+    </servlet-mapping>
+    -->
+
+    <!-- 
+        Context Listener for DatabaseConfig:
+        - Add DatabaseConfig listener to initialize HikariCP connection pool
+    -->
+    <!-- 
+    <listener>
+        <listener-class>com.team.app.config.DatabaseConfig</listener-class>
+    </listener>
+    -->
+
+    <!-- Welcome file -->
+    <welcome-file-list>
+        <welcome-file>index.jsp</welcome-file>
+    </welcome-file-list>
+
+    <!-- Session timeout (in minutes) -->
+    <session-config>
+        <session-timeout>30</session-timeout>
+    </session-config>
+
+    <!-- Error pages -->
+    <error-page>
+        <error-code>404</error-code>
+        <location>/WEB-INF/views/error.jsp</location>
+    </error-page>
+    
+    <error-page>
+        <error-code>500</error-code>
+        <location>/WEB-INF/views/error.jsp</location>
+    </error-page>
+
+</web-app>
+

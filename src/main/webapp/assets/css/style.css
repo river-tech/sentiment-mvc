@@ -1,0 +1,7 @@
+body { background-color: #f8fafc; }
+.card { border-radius: 12px; box-shadow: 0 6px 18px rgba(0,0,0,0.06); border: 1px solid #edf2f7; }
+.btn-primary { background-color: #2196f3; border-color: #2196f3; }
+.navbar-brand { letter-spacing: 0.2px; }
+.form-label { font-weight: 600; }
+.section { margin-top: 20px; }
+

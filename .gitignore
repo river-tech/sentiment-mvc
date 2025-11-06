@@ -1,0 +1,28 @@
+# Maven
+/target/
+.mvn/
+.m2repo/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# OS
+.DS_Store
+
+# Logs
+*.log
+
+# Python venv/cache
+embedding/.venv/
+embedding/__pycache__/
+__pycache__/
+.venv/
+
+# Node or frontend caches (if added later)
+node_modules/
+
+# Tomcat exploded directories (if copied here by mistake)
+sentiment-mvc/
+

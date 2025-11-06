@@ -1,0 +1,11 @@
+# mvc-diagram.png placeholder
+
+TODO: Add MVC Architecture Diagram image here
+This file should contain:
+- Controller layer (Servlets)
+- Service layer (Business Logic)
+- DAO layer (Data Access)
+- Model layer (Entities)
+- View layer (JSP)
+- Worker thread processing flow
+
