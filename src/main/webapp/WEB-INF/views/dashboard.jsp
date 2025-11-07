@@ -19,13 +19,13 @@
   </div>
   <div class="col-12 col-lg-4">
     <div class="card p-4">
-      <h6 class="mb-3">Xin chào, <c:out value="${sessionScope.user.username}" default="Khách"/></h6>
-      <p class="text-muted mb-0">Nhập từ khóa để hệ thống thu thập bài viết và phân tích cảm xúc.</p>
+      <h6 class="mb-3">Nền tảng phân tích cảm xúc thời gian thực</h6>
+      <p class="text-muted mb-0">Nhập từ khóa để hệ thống thu thập bài viết và phân tích cảm xúc, kết quả được chia sẻ toàn hệ thống.</p>
     </div>
   </div>
 </div>
 
-<div class="row section">
+<div id="results" class="row section">
   <div class="col-12 col-lg-4">
     <div class="card p-4">
       <h6 class="mb-3">Tỷ lệ cảm xúc</h6>

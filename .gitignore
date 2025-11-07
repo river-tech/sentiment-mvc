@@ -13,6 +13,7 @@
 
 # Logs
 *.log
+logs/
 
 # Python venv/cache
 embedding/.venv/

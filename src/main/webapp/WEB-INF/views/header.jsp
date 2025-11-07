@@ -14,22 +14,14 @@
 <body style="font-family: 'Inter', sans-serif;">
 <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm sticky-top">
   <div class="container">
-    <a class="navbar-brand fw-semibold text-primary" href="#">Sentiment Insight AI</a>
+    <a class="navbar-brand fw-semibold text-primary" href="<%= request.getContextPath() %>/">Sentiment Insight AI</a>
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
       <span class="navbar-toggler-icon"></span>
     </button>
     <div class="collapse navbar-collapse" id="navbarNav">
-      <ul class="navbar-nav ms-auto">
-        <c:choose>
-          <c:when test="${not empty sessionScope.user}">
-            <li class="nav-item"><a class="nav-link" href="<%= request.getContextPath() %>/dashboard">Dashboard</a></li>
-            <li class="nav-item"><a class="btn btn-outline-danger ms-2" href="<%= request.getContextPath() %>/logout">Đăng xuất</a></li>
-          </c:when>
-          <c:otherwise>
-            <li class="nav-item"><a class="btn btn-outline-primary" href="<%= request.getContextPath() %>/register">Đăng ký</a></li>
-            <li class="nav-item"><a class="btn btn-primary ms-2" href="<%= request.getContextPath() %>/login">Đăng nhập</a></li>
-          </c:otherwise>
-        </c:choose>
+      <ul class="navbar-nav ms-auto align-items-lg-center">
+        <li class="nav-item"><a class="nav-link" href="<%= request.getContextPath() %>/dashboard">Trang chủ</a></li>
+        <li class="nav-item"><a class="btn btn-primary ms-lg-3" href="<%= request.getContextPath() %>/dashboard#results">Kết quả mới nhất</a></li>
       </ul>
     </div>
   </div>

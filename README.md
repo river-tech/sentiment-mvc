@@ -19,10 +19,10 @@ sentiment-mvc/
  │   ├─ main/
  │   │   ├─ java/
  │   │   │   └─ com/team/app/
- │   │   │       ├─ controller/       # Servlets (JobServlet, AuthServlet)
- │   │   │       ├─ service/          # Business logic (JobService, SentimentService)
- │   │   │       ├─ dao/              # Database access (UserDAO, JobDAO, JobArticleDAO)
- │   │   │       ├─ model/            # Entity classes (User, Job, JobArticle)
+ │   │   │       ├─ controller/       # Servlets (DashboardServlet, JobServlet, HealthServlet)
+ │   │   │       ├─ service/          # Business logic (KeywordService, JobService, SentimentService)
+ │   │   │       ├─ dao/              # Database access (JobDAO, JobArticleDAO)
+ │   │   │       ├─ model/            # Entity classes (Job, JobArticle)
  │   │   │       ├─ worker/           # Background Queue + WorkerThread
  │   │   │       ├─ config/           # DB Config (HikariCP)
  │   │   │       └─ util/             # Helpers (HttpClientUtil, JsonParser)
@@ -32,10 +32,10 @@ sentiment-mvc/
  │   │       ├─ WEB-INF/
  │   │       │   ├─ web.xml
  │   │       │   └─ views/
- │   │       │       ├─ login.jsp
- │   │       │       ├─ register.jsp
  │   │       │       ├─ dashboard.jsp
- │   │       │       └─ jobs.jsp
+ │   │       │       ├─ jobs.jsp
+ │   │       │       ├─ header.jsp
+ │   │       │       └─ footer.jsp
  │   │       └─ index.jsp
  │   └─ test/
  │       └─ java/
@@ -50,9 +50,24 @@ sentiment-mvc/
 
 ## Architecture
 
-- **MVC Pattern**: Controller (Servlet) → Service (Business Logic) → DAO (Data Access) → Database
-- **Worker Threads**: Background processing for sentiment analysis jobs
-- **HikariCP**: Connection pooling for database operations
+- **Global dataset**: Không còn đăng nhập/đăng ký; mọi từ khóa và kết quả được chia sẻ cho toàn hệ thống.
+- **Flow chuẩn**: JSP View → Servlet Controller → Service → DAO → PostgreSQL (pgvector) → Job Queue/Worker.
+- **Embedding Service**: Keyword mới gọi Flask API (`/embed`) để lấy vector trước khi lưu DB.
+- **Worker Thread**: Xử lý nền, cập nhật cảm xúc và đảm bảo cột `embedding` có dữ liệu.
+- **HikariCP**: Connection pool cho mọi thao tác JDBC.
+
+```
+Trình duyệt (JSP) ─► Servlet (Job/Dashboard) ─► Service (Keyword/Sentiment)
+                       │                                  │
+                       ▼                                  ▼
+                     DAO (JobDAO, JobArticleDAO) ───► PostgreSQL + pgvector
+                                                           │
+                                                           ▼
+                                                  Flask Embedding API
+                                                           │
+                                                           ▼
+                                                  JobQueue + WorkerThread
+```
 
 ## Quick Start
 
@@ -131,8 +146,8 @@ curl -s -X POST http://127.0.0.1:9696/embed \
 
 ## Notes
 
-- Auth filter chặn toàn bộ route khi chưa đăng nhập, ngoại trừ: `/`, `/login`, `/register`, `/assets/*`, `/health/*`.
-- Sau khi đăng nhập thành công, redirect về `/dashboard`.
+- Ứng dụng không còn bước đăng nhập/đăng ký; trang chủ (`/`) tự động chuyển đến `/dashboard`.
+- Điều hướng chính: Trang chủ → `/`, Phân tích từ khóa → `/jobs`, Kết quả mới nhất → `/dashboard`.
 - CSS public tại `src/main/webapp/assets/css/style.css`.
 
 ## Troubleshooting
@@ -155,7 +170,8 @@ brew services restart tomcat@10
 - Jakarta JSP API 3.1
 - JSTL 3.0
 - HikariCP 5.0
-- MySQL Connector 8.0
+- PostgreSQL JDBC Driver 42.x
+- pgvector extension (PostgreSQL)
 - Gson 2.10
 - JUnit 5
 

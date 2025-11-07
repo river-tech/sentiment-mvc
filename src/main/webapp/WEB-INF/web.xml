@@ -14,33 +14,6 @@
     -->
 
     <!-- 
-    <servlet>
-        <servlet-name>AuthServlet</servlet-name>
-        <servlet-class>com.team.app.controller.AuthServlet</servlet-class>
-    </servlet>
-    
-    <servlet-mapping>
-        <servlet-name>AuthServlet</servlet-name>
-        <url-pattern>/login</url-pattern>
-        <url-pattern>/register</url-pattern>
-        <url-pattern>/logout</url-pattern>
-    </servlet-mapping>
-    -->
-
-    <!-- 
-    <servlet>
-        <servlet-name>JobServlet</servlet-name>
-        <servlet-class>com.team.app.controller.JobServlet</servlet-class>
-    </servlet>
-    
-    <servlet-mapping>
-        <servlet-name>JobServlet</servlet-name>
-        <url-pattern>/jobs</url-pattern>
-        <url-pattern>/jobs/*</url-pattern>
-    </servlet-mapping>
-    -->
-
-    <!-- 
         Context Listener for DatabaseConfig:
         - Add DatabaseConfig listener to initialize HikariCP connection pool
     -->

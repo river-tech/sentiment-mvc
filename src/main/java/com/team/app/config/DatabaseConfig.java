@@ -1,5 +1,6 @@
 package com.team.app.config;
 
+import com.team.app.util.Logger;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import jakarta.servlet.ServletContextEvent;
@@ -24,8 +25,13 @@ public class DatabaseConfig implements ServletContextListener {
     
     @Override
     public void contextInitialized(ServletContextEvent sce) {
+        Logger.info("═══════════════════════════════════════════════════════");
+        Logger.info("🔧 [DatabaseConfig] Khởi tạo database connection...");
+        Logger.info("   Working directory: " + System.getProperty("user.dir"));
+        Logger.info("   Log file: " + com.team.app.util.Logger.getLogFilePath());
         try {
             // Load properties from application.properties
+            Logger.info("   📄 Đang load application.properties...");
             Properties props = new Properties();
             try (InputStream is = getClass().getClassLoader()
                 .getResourceAsStream("application.properties")) {
@@ -51,13 +57,17 @@ public class DatabaseConfig implements ServletContextListener {
             config.setMaxLifetime(Long.parseLong(props.getProperty("db.pool.max.lifetime", "1800000")));
 
             // Initialize DataSource
+            Logger.info("   🔌 Đang khởi tạo HikariCP DataSource...");
             dataSource = new HikariDataSource(config);
+            Logger.info("   ✅ DataSource đã được khởi tạo thành công");
 
             // Store in servlet context
             sce.getServletContext().setAttribute("dataSource", dataSource);
+            Logger.info("   ✅ DataSource đã được lưu vào servlet context");
+            Logger.info("═══════════════════════════════════════════════════════");
             
         } catch (Exception e) {
-            // TODO: Log error
+            Logger.error("   ❌ Lỗi khi khởi tạo database connection", e);
             throw new RuntimeException("Failed to initialize database connection", e);
         }
     }

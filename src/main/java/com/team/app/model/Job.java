@@ -1,93 +1,99 @@
 package com.team.app.model;
 
-import java.time.LocalDateTime;
+import java.sql.Timestamp;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Job - Entity model representing a sentiment analysis job
- * 
- * TODO: Add getters and setters
- * TODO: Add equals() and hashCode() methods
- * TODO: Add toString() method
- * TODO: Add relationship with JobArticle (one-to-many)
+ * Mapped to table: jobs
  */
 public class Job {
-    private int id;
-    private int userId;
-    private String name;
-    private String status; // PENDING, PROCESSING, COMPLETED, FAILED
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
-    private List<JobArticle> articles; // One-to-many relationship
-    
-    // TODO: Generate constructors
-    // TODO: Generate getters and setters
-    
-    public Job() {
-        // Default constructor
+    private Long id;
+    private String keyword;   // thay vì name → thống nhất theo DB
+    private String status;    // QUEUED, RUNNING, DONE, FAILED
+    private int progress;
+    private double positive;
+    private double negative;
+    private double neutral;
+    private String message;
+    private double[] embedding; // embedding vector(384) for semantic matching
+    private Timestamp createdAt;
+    private Timestamp updatedAt;
+    private List<JobArticle> articles; // one-to-many relationship
+
+    public Job() {}
+
+    public Job(String keyword) {
+        this.keyword = keyword;
+        this.status = "QUEUED";
+        this.progress = 0;
     }
-    
-    public Job(int userId, String name) {
-        this.userId = userId;
-        this.name = name;
-        this.status = "PENDING";
+
+    // ==== Getters & Setters ====
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+
+    public String getKeyword() { return keyword; }
+    public void setKeyword(String keyword) { this.keyword = keyword; }
+
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
+
+    public int getProgress() { return progress; }
+    public void setProgress(int progress) { this.progress = progress; }
+
+    public double getPositive() { return positive; }
+    public void setPositive(double positive) { this.positive = positive; }
+
+    public double getNegative() { return negative; }
+    public void setNegative(double negative) { this.negative = negative; }
+
+    public double getNeutral() { return neutral; }
+    public void setNeutral(double neutral) { this.neutral = neutral; }
+
+    public String getMessage() { return message; }
+    public void setMessage(String message) { this.message = message; }
+
+    public double[] getEmbedding() { return embedding; }
+    public void setEmbedding(double[] embedding) { this.embedding = embedding; }
+
+    public Timestamp getCreatedAt() { return createdAt; }
+    public void setCreatedAt(Timestamp createdAt) { this.createdAt = createdAt; }
+
+    public Timestamp getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(Timestamp updatedAt) { this.updatedAt = updatedAt; }
+
+    public List<JobArticle> getArticles() { return articles; }
+    public void setArticles(List<JobArticle> articles) { this.articles = articles; }
+
+    // ==== equals() & hashCode() ====
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Job)) return false;
+        Job job = (Job) o;
+        return Objects.equals(id, job.id);
     }
-    
-    // Getters and setters
-    public int getId() {
-        return id;
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
     }
-    
-    public void setId(int id) {
-        this.id = id;
-    }
-    
-    public int getUserId() {
-        return userId;
-    }
-    
-    public void setUserId(int userId) {
-        this.userId = userId;
-    }
-    
-    public String getName() {
-        return name;
-    }
-    
-    public void setName(String name) {
-        this.name = name;
-    }
-    
-    public String getStatus() {
-        return status;
-    }
-    
-    public void setStatus(String status) {
-        this.status = status;
-    }
-    
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-    
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-    
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
-    }
-    
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
-    }
-    
-    public List<JobArticle> getArticles() {
-        return articles;
-    }
-    
-    public void setArticles(List<JobArticle> articles) {
-        this.articles = articles;
+
+    // ==== toString() ====
+    @Override
+    public String toString() {
+        return "Job{" +
+                "id=" + id +
+                ", keyword='" + keyword + '\'' +
+                ", status='" + status + '\'' +
+                ", progress=" + progress +
+                ", positive=" + positive +
+                ", negative=" + negative +
+                ", neutral=" + neutral +
+                ", embedding=" + (embedding != null ? embedding.length + " dimensions" : "null") +
+                ", createdAt=" + createdAt +
+                '}';
     }
 }
-

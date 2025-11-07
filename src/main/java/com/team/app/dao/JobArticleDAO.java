@@ -1,58 +1,158 @@
 package com.team.app.dao;
 
+import com.team.app.config.DatabaseConfig;
 import com.team.app.model.JobArticle;
+import java.sql.*;
+import java.util.ArrayList;
 import java.util.List;
+import javax.sql.DataSource;
 
 /**
  * JobArticleDAO - Data Access Object for JobArticle entity
- * 
- * TODO: Implement database operations for JobArticle
- * TODO: Use HikariCP connection pool
- * TODO: Implement CRUD methods
  */
 public class JobArticleDAO {
-    
-    // TODO: Inject DataSource from HikariCP
-    
-    /**
-     * Create article for a job
-     * TODO: Execute INSERT query
-     * TODO: Return generated article ID
-     */
-    public int createArticle(JobArticle article) {
-        // TODO: Implement SQL query
-        // INSERT INTO job_articles (job_id, title, content, url, sentiment, created_at) 
-        // VALUES (?, ?, ?, ?, NULL, NOW())
-        return -1;
+    private DataSource dataSource;
+
+    public JobArticleDAO() {
+        this.dataSource = DatabaseConfig.getDataSource();
     }
-    
+
+    public JobArticleDAO(DataSource dataSource) {
+        this.dataSource = dataSource;
+    }
+
+    private DataSource resolveDataSource() {
+        if (dataSource == null) {
+            dataSource = DatabaseConfig.getDataSource();
+        }
+        if (dataSource == null) {
+            throw new IllegalStateException("DataSource is not initialized. Ensure DatabaseConfig is loaded.");
+        }
+        return dataSource;
+    }
+
     /**
-     * Find articles by job ID
-     * TODO: Execute SELECT query
-     * TODO: Map ResultSet to List<JobArticle>
+     * Find all articles by job ID
      */
     public List<JobArticle> findByJobId(int jobId) {
-        // TODO: Implement SQL query
-        // SELECT * FROM job_articles WHERE job_id = ? ORDER BY created_at DESC
-        return null;
+        String sql = "SELECT id, job_id, title, url, description, sentiment, created_at " +
+                     "FROM job_articles WHERE job_id = ? ORDER BY created_at DESC";
+
+        List<JobArticle> articles = new ArrayList<>();
+
+        try (Connection con = resolveDataSource().getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, jobId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    articles.add(mapRow(rs));
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("findByJobId failed", e);
+        }
+
+        return articles;
     }
-    
+
     /**
-     * Update article sentiment
-     * TODO: Execute UPDATE query
+     * Insert single article for a job.
+     * Robust: handles nullable description/sentiment and enum casting.
      */
-    public boolean updateSentiment(int articleId, String sentiment) {
-        // TODO: Implement SQL query
-        // UPDATE job_articles SET sentiment = ? WHERE id = ?
-        return false;
-    }
-    
-    /**
-     * Batch create articles
-     * TODO: Execute batch INSERT
-     */
-    public void batchCreateArticles(List<JobArticle> articles) {
-        // TODO: Implement batch insert
-    }
+    public void insert(long jobId, JobArticle article) {
+        if (article == null) return;
+
+        // Kiểm tra xem cột "description" có tồn tại không để tránh lỗi SQL
+        boolean hasDescription = columnExists("job_articles", "description");
+
+        String sql;
+        if (hasDescription) {
+            sql = "INSERT INTO job_articles (job_id, title, url, description, sentiment, created_at) " +
+                  "VALUES (?, ?, ?, ?, ?, NOW())";
+        } else {
+            sql = "INSERT INTO job_articles (job_id, title, url, sentiment, created_at) " +
+                  "VALUES (?, ?, ?, ?, NOW())";
+        }
+        
+        try (Connection con = resolveDataSource().getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+        
+            ps.setLong(1, jobId);
+            ps.setString(2, article.getTitle());
+            ps.setString(3, article.getUrl());
+        
+            int paramIndex = 4;
+            if (hasDescription) {
+                ps.setString(4, article.getDescription());
+                paramIndex = 5;
+            }
+        
+            String sentiment = article.getSentiment();
+if (sentiment == null || sentiment.isBlank()) {
+    sentiment = "NEUTRAL";
+} else {
+    sentiment = sentiment.toUpperCase(java.util.Locale.ROOT);
 }
 
+ps.setObject(paramIndex, sentiment, java.sql.Types.OTHER);
+        
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            com.team.app.util.Logger.error("[JobArticleDAO] Failed to insert article: jobId=" + jobId
+                    + ", title=" + (article != null ? article.getTitle() : null)
+                    + ", url=" + (article != null ? article.getUrl() : null), e);
+            throw new RuntimeException("Failed to insert article", e);
+        }
+    }
+
+    /**
+     * Delete existing articles for a job.
+     */
+    public void deleteByJobId(long jobId) {
+        String sql = "DELETE FROM job_articles WHERE job_id = ?";
+
+        try (Connection con = resolveDataSource().getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setLong(1, jobId);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException("deleteByJobId failed", e);
+        }
+    }
+
+    /**
+     * Map ResultSet row to JobArticle object
+     */
+    private JobArticle mapRow(ResultSet rs) throws SQLException {
+        JobArticle article = new JobArticle();
+        article.setId(rs.getLong("id"));
+        article.setJobId(rs.getLong("job_id"));
+        article.setTitle(rs.getString("title"));
+        article.setUrl(rs.getString("url"));
+        try {
+            article.setDescription(rs.getString("description"));
+        } catch (SQLException ignore) {
+            article.setDescription(null);
+        }
+        article.setSentiment(rs.getString("sentiment"));
+
+        Timestamp createdAt = rs.getTimestamp("created_at");
+        if (createdAt != null) {
+            article.setCreatedAt(createdAt);
+        }
+
+        return article;
+    }
+
+    /**
+     * Utility - Check if a column exists in the table.
+     */
+    private boolean columnExists(String tableName, String columnName) {
+        try (Connection con = resolveDataSource().getConnection();
+             ResultSet rs = con.getMetaData().getColumns(null, null, tableName, columnName)) {
+            return rs.next();
+        } catch (SQLException e) {
+            return false;
+        }
+    }
+}

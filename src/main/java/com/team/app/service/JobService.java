@@ -27,10 +27,10 @@ public class JobService {
     }
     
     /**
-     * Get all jobs for a user
-     * TODO: Call JobDAO.findAllByUserId()
+     * Get all jobs (system-wide, no user filtering)
+     * TODO: Call JobDAO.findAll()
      */
-    public List<Job> getAllJobs(int userId) {
+    public List<Job> getAllJobs() {
         // TODO: Implement
         return null;
     }
@@ -59,7 +59,7 @@ public class JobService {
      * TODO: Check permissions
      * TODO: Call JobDAO.deleteJob()
      */
-    public boolean deleteJob(int jobId, int userId) {
+    public boolean deleteJob(int jobId) {
         // TODO: Implement
         return false;
     }
