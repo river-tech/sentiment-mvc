@@ -82,6 +82,13 @@
             <version>2.10.1</version>
         </dependency>
 
+        <!-- org.json for JSONObject (used by SentimentService) -->
+        <dependency>
+            <groupId>org.json</groupId>
+            <artifactId>json</artifactId>
+            <version>20231013</version>
+        </dependency>
+
         <!-- HTML parsing for Google News RSS crawling -->
         <dependency>
             <groupId>org.jsoup</groupId>

@@ -18,7 +18,7 @@ public class JobQueue {
     public static JobQueue getInstance() {
         return INSTANCE;
     }
-
+    
     public void submit(Long jobId) {
         if (jobId == null) {
             Logger.warn("[JobQueue] Attempted to submit null jobId");
@@ -27,7 +27,7 @@ public class JobQueue {
         queue.offer(jobId);
         Logger.info("[JobQueue] Submitted job ID: " + jobId);
     }
-
+    
     public Long take() throws InterruptedException {
         Long jobId = queue.take();
         Logger.info("[JobQueue] Dequeued job ID: " + jobId);

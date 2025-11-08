@@ -67,10 +67,18 @@ public class Logger {
         // Print to console
         System.out.println(logMessage);
         
-        // Write to file
+        // Write to file with immediate flush
         if (fileWriter != null) {
-            fileWriter.println(logMessage);
-            fileWriter.flush();
+            try {
+                fileWriter.println(logMessage);
+                fileWriter.flush();
+            } catch (Exception e) {
+                // If file write fails, at least print to console
+                System.err.println("Failed to write to log file: " + e.getMessage());
+            }
+        } else {
+            // If fileWriter is null, try to reinitialize
+            System.err.println("WARNING: Logger fileWriter is null. Log message: " + logMessage);
         }
     }
     

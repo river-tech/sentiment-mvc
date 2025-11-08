@@ -78,6 +78,7 @@ public class KeywordService {
             Job existingJob = jobDAO.findById(similarJob.getJobId());
             if (existingJob != null) {
                 Logger.info("     ✅ Trả về job cũ (ID: " + existingJob.getId() + ")");
+                Logger.info("     📋 Articles sẽ được lấy từ DB (không crawl lại)");
                 return existingJob;
             }
         }

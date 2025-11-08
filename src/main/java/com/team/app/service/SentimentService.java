@@ -2,53 +2,24 @@ package com.team.app.service;
 
 import com.team.app.model.JobArticle;
 import com.team.app.util.Logger;
-import java.text.Normalizer;
-import java.util.Arrays;
-import java.util.Collections;
+import org.json.JSONObject;
+
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
 
 /**
- * SentimentService - Simple rule-based sentiment analysis using word lists.
+ * SentimentService - Flask API based sentiment analysis.
+ * Calls Python service http://127.0.0.1:9696/sentiment
+ * Replaces old rule-based classifier.
  */
 public class SentimentService {
 
-    private static final Set<String> POSITIVE_KEYWORDS;
-    private static final Set<String> NEGATIVE_KEYWORDS;
-
-    static {
-        Set<String> positive = new HashSet<>();
-        positive.addAll(Arrays.asList(
-            "good", "great", "excellent", "positive", "gain", "success",
-            "improve", "benefit", "growth", "strong", "optimistic", "up",
-            "win", "secure", "stability", "profit", "favorable", "bullish",
-            "record", "surge", "rally", "amazing", "happy", "love",
-            "tang", "tang truong", "tang trưởng", "tangtruong", "tăng trưởng",
-            "tich cuc", "tichcuc", "tích cực", "trien vong", "trienvong",
-            "thuong loi", "thuongloi", "ky vong", "kyvong", "ben cung",
-            "bencung", "ky ket", "kyket", "ky ket thanh cong", "kyketthanhcong"
-        ));
-
-        Set<String> negative = new HashSet<>();
-        negative.addAll(Arrays.asList(
-            "bad", "poor", "negative", "loss", "decline", "drop",
-            "weak", "down", "risk", "warn", "warning", "crash", "fail",
-            "collapse", "bearish", "cut", "fall", "uncertain", "lawsuit",
-            "fraud", "crisis", "fear", "slowdown", "terrible", "hate",
-            "sad", "angry", "giam", "giảm", "suy giam", "suygiam",
-            "tieu cuc", "tieucuc", "tiêu cực", "khung hoang", "khunghoang",
-            "thiet thoi", "thietthoi", "thua", "thua lo", "thua lỗ",
-            "sut giam", "sutgiam", "kho han", "khohan", "dich benh", "dichbenh"
-        ));
-
-        POSITIVE_KEYWORDS = Collections.unmodifiableSet(positive);
-        NEGATIVE_KEYWORDS = Collections.unmodifiableSet(negative);
-    }
+    private static final String API_URL = "http://127.0.0.1:9696/sentiment";
 
     /**
      * Analyze a list of articles and return percentage distribution map.
@@ -101,6 +72,7 @@ public class SentimentService {
         for (JobArticle article : articles) {
             String sentiment = classifyArticle(article);
             article.setSentiment(sentiment);
+
             switch (sentiment) {
                 case "positive" -> positive++;
                 case "negative" -> negative++;
@@ -109,81 +81,69 @@ public class SentimentService {
         }
 
         SentimentStats stats = new SentimentStats(positive, negative, neutral, articles.size());
-        Logger.info("Sentiment stats -> positive: " + stats.getPositivePercentage()
-                + "% negative: " + stats.getNegativePercentage()
-                + "% neutral: " + stats.getNeutralPercentage());
+        Logger.info(String.format("Sentiment stats -> positive: %.2f%% negative: %.2f%% neutral: %.2f%%",
+                stats.getPositivePercentage(), stats.getNegativePercentage(), stats.getNeutralPercentage()));
         return stats;
     }
 
+    /**
+     * Classify single article by calling Flask API
+     */
     private String classifyArticle(JobArticle article) {
-        if (article == null) {
-            return "neutral";
-        }
+        if (article == null) return "neutral";
+
         StringBuilder builder = new StringBuilder();
-        if (article.getTitle() != null) {
-            builder.append(article.getTitle()).append(' ');
-        }
-        if (article.getDescription() != null) {
-            builder.append(article.getDescription());
-        }
-        return classifyText(builder.toString());
-    }
+        if (article.getTitle() != null) builder.append(article.getTitle()).append(' ');
+        if (article.getDescription() != null) builder.append(article.getDescription());
+        String text = builder.toString().trim();
 
-    private String classifyText(String text) {
-        if (text == null || text.isBlank()) {
-            return "neutral";
-        }
+        if (text.isEmpty()) return "neutral";
 
-        String lower = text.toLowerCase(Locale.ROOT);
-        String normalized = normalize(text);
+        try {
+            HttpClient client = HttpClient.newHttpClient();
+            
+            // Properly escape JSON string
+            String escapedText = text
+                    .replace("\\", "\\\\")
+                    .replace("\"", "\\\"")
+                    .replace("\n", "\\n")
+                    .replace("\r", "\\r")
+                    .replace("\t", "\\t");
+            
+            String jsonBody = "{\"text\":\"" + escapedText + "\"}";
 
-        int score = 0;
-        for (String keyword : POSITIVE_KEYWORDS) {
-            if (containsKeyword(lower, normalized, keyword)) {
-                score++;
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(API_URL))
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
+                    .timeout(java.time.Duration.ofSeconds(10))
+                    .build();
+
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+            if (response.statusCode() == 200) {
+                JSONObject obj = new JSONObject(response.body());
+                String label = obj.optString("label", "neutral").toLowerCase();
+                
+                // Normalize label to expected values
+                if (label.equals("pos") || label.equals("positive")) {
+                    return "positive";
+                } else if (label.equals("neg") || label.equals("negative")) {
+                    return "negative";
+                } else {
+                    return "neutral";
+                }
+            } else {
+                Logger.warn("Flask API returned non-200 status: " + response.statusCode() + " for text: " + text.substring(0, Math.min(50, text.length())));
             }
-        }
-        for (String keyword : NEGATIVE_KEYWORDS) {
-            if (containsKeyword(lower, normalized, keyword)) {
-                score--;
-            }
-        }
-
-        if (score > 0) {
-            return "positive";
-        }
-        if (score < 0) {
-            return "negative";
+        } catch (java.net.http.HttpTimeoutException e) {
+            Logger.error("Sentiment API timeout: " + e.getMessage());
+        } catch (java.io.IOException e) {
+            Logger.error("Sentiment API IO error: " + e.getMessage());
+        } catch (Exception e) {
+            Logger.error("Sentiment API failed: " + e.getMessage(), e);
         }
         return "neutral";
-    }
-
-    private boolean containsKeyword(String lower, String normalizedText, String keyword) {
-        if (keyword == null || keyword.isBlank()) {
-            return false;
-        }
-        String keyLower = keyword.toLowerCase(Locale.ROOT);
-        if (lower.contains(keyLower)) {
-            return true;
-        }
-        String normalizedKey = normalize(keyword);
-        if (!Objects.equals(normalizedKey, keyLower) && normalizedText.contains(normalizedKey)) {
-            return true;
-        }
-        return false;
-    }
-
-    /**
-     * Normalize text by lower-casing and removing diacritics/non-letter characters.
-     */
-    private String normalize(String text) {
-        if (text == null) {
-            return "";
-        }
-        String noAccents = Normalizer.normalize(text, Normalizer.Form.NFD)
-                .replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
-        String lowerCase = noAccents.toLowerCase(Locale.ROOT);
-        return lowerCase.replaceAll("[^a-z0-9\\s]", " ").replaceAll("\\s+", " ").trim();
     }
 
     private Map<String, Double> neutralOnlyResult() {
@@ -256,4 +216,3 @@ public class SentimentService {
         }
     }
 }
-

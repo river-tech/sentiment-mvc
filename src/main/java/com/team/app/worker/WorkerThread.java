@@ -16,7 +16,7 @@ import java.util.Map;
  * WorkerThread - Background thread for processing sentiment analysis jobs.
  */
 public class WorkerThread extends Thread {
-
+    
     private final JobQueue queue;
     private final CrawlService crawlService;
     private final SentimentService sentimentService;
@@ -33,7 +33,7 @@ public class WorkerThread extends Thread {
         this.articleDAO = articleDAO != null ? articleDAO : new JobArticleDAO();
         setDaemon(true);
     }
-
+    
     @Override
     public void run() {
         Logger.info("[WorkerThread] Worker thread started: " + getName());
@@ -61,7 +61,7 @@ public class WorkerThread extends Thread {
                     jobDAO.updateStatus(jobId, "FAILED", 0);
                     continue;
                 }
-
+                
                 Logger.info("[WorkerThread] Worker started job: " + job.getKeyword() + " (#" + jobId + ")");
 
                 List<JobArticle> articles = crawlService.fetchArticles(job.getKeyword());
@@ -128,7 +128,7 @@ public class WorkerThread extends Thread {
         }
         Logger.info("[WorkerThread] Worker thread stopped: " + getName());
     }
-
+    
     private void ensureEmbedding(Long jobId, Job job) {
         try {
             if (job.getEmbedding() != null && job.getEmbedding().length > 0) {
