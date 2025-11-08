@@ -53,7 +53,8 @@ sentiment-mvc/
 - **Global dataset**: Không còn đăng nhập/đăng ký; mọi từ khóa và kết quả được chia sẻ cho toàn hệ thống.
 - **Flow chuẩn**: JSP View → Servlet Controller → Service → DAO → PostgreSQL (pgvector) → Job Queue/Worker.
 - **Embedding Service**: Keyword mới gọi Flask API (`/embed`) để lấy vector trước khi lưu DB.
-- **Worker Thread**: Xử lý nền, cập nhật cảm xúc và đảm bảo cột `embedding` có dữ liệu.
+- **Sentiment Service**: Phân tích cảm xúc bằng Flask API (`/sentiment`) thay vì rule-based.
+- **Worker Thread**: Xử lý nền, crawl articles, gọi sentiment API, cập nhật cảm xúc và đảm bảo cột `embedding` có dữ liệu.
 - **HikariCP**: Connection pool cho mọi thao tác JDBC.
 
 ```
@@ -63,7 +64,10 @@ Trình duyệt (JSP) ─► Servlet (Job/Dashboard) ─► Service (Keyword/Sent
                      DAO (JobDAO, JobArticleDAO) ───► PostgreSQL + pgvector
                                                            │
                                                            ▼
-                                                  Flask Embedding API
+                                                  Flask API Service
+                                                           │
+                                                           ├─► /embed (Embedding)
+                                                           └─► /sentiment (Sentiment Analysis)
                                                            │
                                                            ▼
                                                   JobQueue + WorkerThread
@@ -239,26 +243,96 @@ curl http://localhost:8080/sentiment-mvc/health/db
 
 Hoặc mở browser: `http://localhost:8080/sentiment-mvc/health/db`
 
-### 2.10) Embedding Service (Tùy chọn)
+### 2.10) Embedding & Sentiment Service (Python API)
 
-1. Cài đặt Python 3.10+ từ [python.org](https://www.python.org/downloads/)
-2. Mở **Command Prompt** tại thư mục `embedding`:
+#### 2.10.1) Cài đặt Python 3.10+
+
+1. Tải Python 3.10+ từ [python.org](https://www.python.org/downloads/)
+2. Chọn **Windows installer (64-bit)**
+3. Cài đặt và chọn **"Add Python to PATH"**
+4. Kiểm tra:
    ```cmd
-   cd C:\path\to\sentiment-mvc\embedding
-   python -m venv .venv
-   .venv\Scripts\activate
-   python -m pip install --upgrade pip
-   pip install -r requirements.txt
-   set HF_HUB_DISABLE_TELEMETRY=1
-   python embedding_api.py
+   python --version
+   pip --version
    ```
 
-3. Service sẽ chạy tại: `http://127.0.0.1:9696/embed`
+#### 2.10.2) Tạo Virtual Environment và Cài Packages
 
-4. Test:
-   ```cmd
-   curl -X POST http://127.0.0.1:9696/embed -H "Content-Type: application/json" -d "{\"keyword\":\"học máy là gì\"}"
-   ```
+Mở **Command Prompt** tại thư mục `embedding`:
+
+```cmd
+cd C:\path\to\sentiment-mvc\embedding
+python -m venv .venv
+.venv\Scripts\activate
+python -m pip install --upgrade pip
+pip install -r requirements.txt
+```
+
+**Lưu ý:** Quá trình cài đặt có thể mất 5-10 phút do cần tải các thư viện ML lớn (PyTorch, transformers, sentence-transformers).
+
+#### 2.10.3) Tải Models (Tự động khi chạy lần đầu)
+
+Models sẽ được tự động tải từ Hugging Face khi chạy service lần đầu:
+
+- **Embedding Model**: `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2` (~420 MB)
+- **Sentiment Model**: `wonrax/phobert-base-vietnamese-sentiment` (~450 MB)
+
+**Tổng dung lượng**: ~870 MB (models sẽ được cache tại `~/.cache/huggingface/`)
+
+**Tắt telemetry Hugging Face** (tùy chọn):
+```cmd
+set HF_HUB_DISABLE_TELEMETRY=1
+```
+
+#### 2.10.4) Chạy Service
+
+```cmd
+cd C:\path\to\sentiment-mvc\embedding
+.venv\Scripts\activate
+python embedding_api.py
+```
+
+Service sẽ chạy tại:
+- **Embedding API**: `http://127.0.0.1:9696/embed`
+- **Sentiment API**: `http://127.0.0.1:9696/sentiment`
+- **Status API**: `http://127.0.0.1:9696/status`
+
+#### 2.10.5) Test APIs
+
+**Test Embedding API:**
+```cmd
+curl -X POST http://127.0.0.1:9696/embed -H "Content-Type: application/json" -d "{\"keyword\":\"học máy là gì\"}"
+```
+
+**Test Sentiment API:**
+```cmd
+curl -X POST http://127.0.0.1:9696/sentiment -H "Content-Type: application/json" -d "{\"text\":\"Sản phẩm này rất tuyệt vời và chất lượng cao\"}"
+```
+
+**Test Status:**
+```cmd
+curl http://127.0.0.1:9696/status
+```
+
+#### 2.10.6) Troubleshooting
+
+**Lỗi "Module not found":**
+- Đảm bảo virtual environment đã được activate: `.venv\Scripts\activate`
+- Cài lại packages: `pip install -r requirements.txt`
+
+**Lỗi "CUDA out of memory" hoặc models quá nặng:**
+- Service sẽ tự động dùng CPU nếu không có GPU
+- Có thể chỉnh `DEVICE` trong `embedding_api.py` để force CPU: `DEVICE = "cpu"`
+
+**Models tải chậm:**
+- Models sẽ được cache sau lần tải đầu tiên
+- Có thể tải trước models bằng cách chạy Python script:
+  ```python
+  from sentence_transformers import SentenceTransformer
+  from transformers import AutoTokenizer, AutoModelForSequenceClassification
+  SentenceTransformer("sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
+  AutoModelForSequenceClassification.from_pretrained("wonrax/phobert-base-vietnamese-sentiment")
+  ```
 
 ---
 
@@ -305,24 +379,102 @@ Truy cập: `http://localhost:8080/sentiment-mvc/`
 curl -s http://localhost:8080/sentiment-mvc/health/db
 ```
 
-### 6) Embedding service (tùy chọn)
+### 6) Embedding & Sentiment Service (Python API)
+
+#### 6.1) Cài đặt Python 3.10+
+
+```bash
+# macOS (Homebrew)
+brew install python@3.10
+
+# Linux (Ubuntu/Debian)
+sudo apt-get update
+sudo apt-get install python3.10 python3.10-venv python3-pip
+
+# Kiểm tra
+python3 --version
+pip3 --version
+```
+
+#### 6.2) Tạo Virtual Environment và Cài Packages
 
 ```bash
 cd embedding
-python3 -m venv .venv && source .venv/bin/activate
+python3 -m venv .venv
+source .venv/bin/activate
 python -m pip install --upgrade pip
 pip install -r requirements.txt
-export HF_HUB_DISABLE_TELEMETRY=1
-python embedding_api.py  # http://127.0.0.1:9696/embed
 ```
 
-Test nhanh:
+**Lưu ý:** Quá trình cài đặt có thể mất 5-10 phút do cần tải các thư viện ML lớn (PyTorch, transformers, sentence-transformers).
 
+#### 6.3) Tải Models (Tự động khi chạy lần đầu)
+
+Models sẽ được tự động tải từ Hugging Face khi chạy service lần đầu:
+
+- **Embedding Model**: `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2` (~420 MB)
+- **Sentiment Model**: `wonrax/phobert-base-vietnamese-sentiment` (~450 MB)
+
+**Tổng dung lượng**: ~870 MB (models sẽ được cache tại `~/.cache/huggingface/`)
+
+**Tắt telemetry Hugging Face** (tùy chọn):
+```bash
+export HF_HUB_DISABLE_TELEMETRY=1
+```
+
+#### 6.4) Chạy Service
+
+```bash
+cd embedding
+source .venv/bin/activate
+python embedding_api.py
+```
+
+Service sẽ chạy tại:
+- **Embedding API**: `http://127.0.0.1:9696/embed`
+- **Sentiment API**: `http://127.0.0.1:9696/sentiment`
+- **Status API**: `http://127.0.0.1:9696/status`
+
+#### 6.5) Test APIs
+
+**Test Embedding API:**
 ```bash
 curl -s -X POST http://127.0.0.1:9696/embed \
   -H "Content-Type: application/json" \
   -d '{"keyword":"học máy là gì"}'
 ```
+
+**Test Sentiment API:**
+```bash
+curl -s -X POST http://127.0.0.1:9696/sentiment \
+  -H "Content-Type: application/json" \
+  -d '{"text":"Sản phẩm này rất tuyệt vời và chất lượng cao"}'
+```
+
+**Test Status:**
+```bash
+curl -s http://127.0.0.1:9696/status
+```
+
+#### 6.6) Troubleshooting
+
+**Lỗi "Module not found":**
+- Đảm bảo virtual environment đã được activate: `source .venv/bin/activate`
+- Cài lại packages: `pip install -r requirements.txt`
+
+**Lỗi "CUDA out of memory" hoặc models quá nặng:**
+- Service sẽ tự động dùng CPU nếu không có GPU
+- Có thể chỉnh `DEVICE` trong `embedding_api.py` để force CPU: `DEVICE = "cpu"`
+
+**Models tải chậm:**
+- Models sẽ được cache sau lần tải đầu tiên
+- Có thể tải trước models bằng cách chạy Python script:
+  ```python
+  from sentence_transformers import SentenceTransformer
+  from transformers import AutoTokenizer, AutoModelForSequenceClassification
+  SentenceTransformer("sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
+  AutoModelForSequenceClassification.from_pretrained("wonrax/phobert-base-vietnamese-sentiment")
+  ```
 
 ## Notes
 
@@ -406,6 +558,7 @@ tail -f catalina.$(date +%F).log
 
 ## Technologies
 
+### Backend (Java)
 - Java 17
 - Jakarta Servlet API 6.0
 - Jakarta JSP API 3.1
@@ -414,7 +567,22 @@ tail -f catalina.$(date +%F).log
 - PostgreSQL JDBC Driver 42.x
 - pgvector extension (PostgreSQL)
 - Gson 2.10
+- org.json 20231013
+- Jsoup 1.17.2 (HTML parsing)
 - JUnit 5
+
+### ML Service (Python)
+- Python 3.10+
+- Flask 3.1.2
+- PyTorch 2.9.0
+- transformers 4.57.1
+- sentence-transformers 5.1.2
+- scikit-learn 1.7.2
+- numpy 2.3.4
+
+### Models (Hugging Face)
+- **Embedding**: `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2` (~420 MB)
+- **Sentiment**: `wonrax/phobert-base-vietnamese-sentiment` (~450 MB)
 
 ## License
 
