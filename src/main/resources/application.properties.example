@@ -1,0 +1,30 @@
+# Database Configuration (PostgreSQL)
+# Copy this file to application.properties and update with your actual credentials
+
+# Example for localhost PostgreSQL
+db.url=jdbc:postgresql://localhost:5432/admin
+db.username=admin
+db.password=YOUR_PASSWORD_HERE
+db.driver=org.postgresql.Driver
+
+# Example for cloud PostgreSQL (Aiven, AWS RDS, etc.)
+# db.url=jdbc:postgresql://your-host:port/database?sslmode=require
+# db.username=your_username
+# db.password=your_password
+# db.driver=org.postgresql.Driver
+
+# HikariCP Connection Pool Configuration
+db.pool.maximum=10
+db.pool.minimum.idle=5
+db.pool.connection.timeout=30000
+db.pool.idle.timeout=600000
+db.pool.max.lifetime=1800000
+
+# Application Configuration
+app.name=Sentiment MVC
+app.version=1.0.0
+
+# Worker Thread Configuration
+worker.thread.count=3
+worker.queue.size=100
+
