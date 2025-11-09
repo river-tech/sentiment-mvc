@@ -14,7 +14,7 @@
 # Logs
 *.log
 logs/
-
+src/main/resources/application.properties
 # Python venv/cache
 embedding/.venv/
 embedding/__pycache__/
