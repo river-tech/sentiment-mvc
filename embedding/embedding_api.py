@@ -157,4 +157,4 @@ def status():
 # ⚙️ Run Flask server
 # ======================================================
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=9696, debug=False)
+    app.run(host="0.0.0.0", port=9697, debug=False)

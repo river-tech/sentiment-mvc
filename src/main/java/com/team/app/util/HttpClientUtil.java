@@ -100,7 +100,7 @@ public class HttpClientUtil {
     /**
      * Get embedding vector from Flask API
      * 
-     * Sends POST request to http://127.0.0.1:9696/embed with JSON body:
+     * Sends POST request to http://127.0.0.1:9697/embed with JSON body:
      * { "keyword": "..." }
      * 
      * Expects JSON response:
@@ -112,14 +112,14 @@ public class HttpClientUtil {
      */
     public static double[] getEmbedding(String keyword) throws IOException {
         Logger.info("    [HttpClientUtil] Gọi embedding API");
-        Logger.info("       - URL: http://127.0.0.1:9696/embed");
+        Logger.info("       - URL: http://127.0.0.1:9697/embed");
         Logger.info("       - Keyword: " + keyword);
         
         if (keyword == null || keyword.trim().isEmpty()) {
             throw new IllegalArgumentException("Keyword cannot be null or empty");
         }
         
-        String apiUrl = "http://127.0.0.1:9696/embed";
+        String apiUrl = "http://127.0.0.1:9697/embed";
         
         // Build JSON request body
         JsonObject requestBody = new JsonObject();

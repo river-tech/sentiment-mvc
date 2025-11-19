@@ -14,12 +14,12 @@ import java.util.Map;
 
 /**
  * SentimentService - Flask API based sentiment analysis.
- * Calls Python service http://127.0.0.1:9696/sentiment
+ * Calls Python service http://127.0.0.1:9697/sentiment
  * Replaces old rule-based classifier.
  */
 public class SentimentService {
 
-    private static final String API_URL = "http://127.0.0.1:9696/sentiment";
+    private static final String API_URL = "http://127.0.0.1:9697/sentiment";
 
     /**
      * Analyze a list of articles and return percentage distribution map.

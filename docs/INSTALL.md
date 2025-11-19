@@ -62,7 +62,7 @@ Trang chủ (`/`) sẽ tự động chuyển đến `/dashboard`. Không cần �
 
 ## Optional: Embedding Flask API
 
-Ứng dụng gọi `http://127.0.0.1:9696/embed` để tạo embedding keyword.
+Ứng dụng gọi `http://127.0.0.1:9697/embed` để tạo embedding keyword.
 
 ```bash
 cd embedding

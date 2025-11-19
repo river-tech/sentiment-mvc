@@ -5,8 +5,8 @@
 cd "$(dirname "$0")"
 
 # Kích hoạt môi trường ảo
-source .venv/bin/activate
+source venv/bin/activate
 
 # Chạy Flask API
-echo "Starting Embedding API on http://127.0.0.1:9696 ..."
+echo "Starting Embedding API on http://127.0.0.1:9697 ..."
 python3 embedding_api.py
