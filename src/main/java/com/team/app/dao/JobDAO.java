@@ -13,11 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
 
-/**
- * JobDAO - Data Access Object for Job entity
- * 
- * Handles database operations for jobs including embedding vector similarity search
- */
+
 public class JobDAO {
     private DataSource dataSource;
     
@@ -38,40 +34,18 @@ public class JobDAO {
         }
         return dataSource;
     }
-    
-    /**
-     * Find the most similar job by embedding vector using PostgreSQL pgvector
-     * 
-     * Uses cosine distance operator (<=>) which is faster than manual cosine calculation
-     * Similarity = 1 - distance (distance ranges from 0 to 2, similarity from 1 to -1)
-     * 
-     * SQL: SELECT id, keyword, 1 - (embedding <=> ?) AS similarity
-     *      FROM jobs
-     *      WHERE embedding IS NOT NULL
-     *      ORDER BY similarity DESC
-     *      LIMIT 1;
-     * 
-     * Note: If using PostgreSQL pgvector extension, prefer embedding <=> ?::vector 
-     * because it's faster than manual cosine similarity calculation
-     * 
-     * @param embedding Embedding vector to compare (float[] or double[])
-     * @return SimilarJob with jobId and similarity score, or null if no jobs found
-     */
+
     public SimilarJob findMostSimilarJob(double[] embedding) {
         Logger.info("    [JobDAO] Tìm job tương tự nhất");
         Logger.info("       - Vector dimensions: " + (embedding != null ? embedding.length : 0));
         
         if (embedding == null || embedding.length == 0) {
-            Logger.warn("       ⚠️  Vector null hoặc rỗng");
+            Logger.warn("      Vector null hoặc rỗng");
             return null;
         }
         
-        // Convert vector to PostgreSQL format
         String pgVector = EmbeddingUtil.arrayToPgVector(embedding);
-        
-        // Use pgvector cosine distance operator (<=>)
-        // 1 - distance = similarity (distance 0 = identical, distance 2 = opposite)
-        // ORDER BY similarity DESC to get highest similarity first
+ 
         String sql = "SELECT id, keyword, 1 - (embedding <=> ?::vector) AS similarity " +
                      "FROM jobs " +
                      "WHERE embedding IS NOT NULL " +
@@ -97,24 +71,17 @@ public class JobDAO {
                     Logger.info("          - Similarity: " + String.format("%.4f", similarity));
                     return new SimilarJob(jobId, similarity);
                 } else {
-                    Logger.info("       ℹ️  Không tìm thấy job nào có embedding trong DB");
+                    Logger.info("      Không tìm thấy job nào có embedding trong DB");
                 }
             }
         } catch (SQLException e) {
-            Logger.error("       ❌ Lỗi SQL khi tìm similar job", e);
+            Logger.error("       Lỗi SQL khi tìm similar job", e);
             throw new RuntimeException("findMostSimilarJob failed", e);
         }
         
         return null;
     }
-    
-    /**
-     * Create a new job with embedding vector
-     * 
-     * @param keyword Job keyword
-     * @param embedding Embedding vector (384 dimensions)
-     * @return Generated job ID, or -1 if failed
-     */
+
     public long create(String keyword, double[] embedding) {
         Logger.info("    [JobDAO] Bắt đầu tạo job trong DB");
         Logger.info("       - Keyword: " + keyword);
@@ -142,27 +109,24 @@ public class JobDAO {
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
                     long jobId = rs.getLong("id");
-                    Logger.info("       ✅ Job đã được INSERT vào DB thành công!");
-                    Logger.info("       ✅ Job ID được tạo: " + jobId);
-                    Logger.info("       ✅ Status: QUEUED");
+                    Logger.info("        Job đã được INSERT vào DB thành công!");
+                    Logger.info("        Job ID được tạo: " + jobId);
+                    Logger.info("       Status: QUEUED");
                     return jobId;
                 } else {
-                    Logger.error("       ❌ INSERT thành công nhưng không có RETURNING id");
+                    Logger.error("       INSERT thành công nhưng không có RETURNING id");
                 }
             }
         } catch (SQLException e) {
-            Logger.error("       ❌ Lỗi SQL khi tạo job", e);
-            Logger.error("       ❌ SQL Error: " + e.getMessage());
+            Logger.error("       Lỗi SQL khi tạo job", e);
+            Logger.error("       SQL Error: " + e.getMessage());
             throw new RuntimeException("create job failed", e);
         }
         
-        Logger.error("       ❌ Tạo job thất bại - không có jobId được trả về");
+        Logger.error("       Tạo job thất bại - không có jobId được trả về");
         return -1;
     }
 
-    /**
-     * Create a new job with default status QUEUED (no embedding provided).
-     */
     public long create(String keyword) {
         String sql = "INSERT INTO jobs (keyword, status, progress, created_at, updated_at) " +
                 "VALUES (?, 'QUEUED'::job_status, 0, NOW(), NOW()) RETURNING id";
@@ -172,20 +136,17 @@ public class JobDAO {
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
                     long jobId = rs.getLong("id");
-                    Logger.info("       ✅ Job đã được tạo (QUEUED) - ID: " + jobId);
+                    Logger.info("        Job đã được tạo (QUEUED) - ID: " + jobId);
                     return jobId;
                 }
             }
         } catch (SQLException e) {
-            Logger.error("       ❌ Lỗi SQL khi tạo job (no embedding)", e);
+            Logger.error("       Lỗi SQL khi tạo job (no embedding)", e);
             throw new RuntimeException("create job failed", e);
         }
         return -1;
     }
     
-    /**
-     * Find job by ID
-     */
     public Job findById(long jobId) {
         String sql = "SELECT id, keyword, status, progress, positive, negative, neutral, " +
                      "message, embedding, created_at, updated_at " +
@@ -208,11 +169,6 @@ public class JobDAO {
         return null;
     }
     
-    /**
-     * Find all jobs (system-wide, no user filtering)
-     * 
-     * @return List of all jobs ordered by creation date (newest first)
-     */
     public List<Job> findAll() {
         String sql = "SELECT id, keyword, status, progress, positive, negative, neutral, " +
                      "message, embedding, created_at, updated_at " +
@@ -236,9 +192,6 @@ public class JobDAO {
         return jobs;
     }
     
-    /**
-     * Update job status
-     */
     public boolean updateStatus(long jobId, String status) {
         String sql = "UPDATE jobs SET status = ?::job_status, updated_at = NOW() WHERE id = ?";
         
@@ -254,9 +207,6 @@ public class JobDAO {
         }
     }
 
-    /**
-     * Update job status and progress in a single operation.
-     */
     public boolean updateStatus(long jobId, String status, int progress) {
         String sql = "UPDATE jobs SET status = ?::job_status, progress = ?, updated_at = NOW() WHERE id = ?";
 
@@ -274,9 +224,6 @@ public class JobDAO {
         }
     }
     
-    /**
-     * Update job sentiment results
-     */
     public boolean updateSentiment(long jobId, double positive, double negative, double neutral) {
         String sql = "UPDATE jobs SET positive = ?, negative = ?, neutral = ?, " +
                      "status = 'DONE'::job_status, updated_at = NOW() WHERE id = ?";
@@ -294,9 +241,6 @@ public class JobDAO {
         }
     }
 
-    /**
-     * Update job sentiment from map results.
-     */
     public boolean updateSentiment(long jobId, java.util.Map<String, Double> sentiment) {
         if (sentiment == null || sentiment.isEmpty()) {
             return updateSentiment(jobId, 0.0, 0.0, 100.0);
@@ -307,13 +251,6 @@ public class JobDAO {
         return updateSentiment(jobId, positive, negative, neutral);
     }
     
-    /**
-     * Update job embedding vector
-     * 
-     * @param jobId Job ID
-     * @param embedding Embedding vector (384 dimensions)
-     * @return true if update successful
-     */
     public boolean updateEmbedding(long jobId, double[] embedding) {
         Logger.info("    [JobDAO] Cập nhật embedding cho job ID: " + jobId);
         
@@ -331,17 +268,13 @@ public class JobDAO {
             ps.setLong(2, jobId);
             
             int rowsUpdated = ps.executeUpdate();
-            Logger.info("       ✅ Cập nhật embedding: " + (rowsUpdated > 0 ? "thành công" : "không có job nào được cập nhật"));
+            Logger.info("        Cập nhật embedding: " + (rowsUpdated > 0 ? "thành công" : "không có job nào được cập nhật"));
             return rowsUpdated > 0;
         } catch (SQLException e) {
-            Logger.error("       ❌ Lỗi SQL khi cập nhật embedding", e);
+            Logger.error("        Lỗi SQL khi cập nhật embedding", e);
             throw new RuntimeException("updateEmbedding failed", e);
         }
     }
-    
-    /**
-     * Delete job
-     */
     public boolean deleteJob(long jobId) {
         String sql = "DELETE FROM jobs WHERE id = ?";
         
@@ -356,9 +289,6 @@ public class JobDAO {
         }
     }
 
-    /**
-     * Mark job as FAILED with a message.
-     */
     public void markFailed(long jobId, String reason) {
         String sql = "UPDATE jobs SET status = 'FAILED'::job_status, message = ?, updated_at = NOW() WHERE id = ?";
         try (Connection con = resolveDataSource().getConnection();
@@ -372,10 +302,7 @@ public class JobDAO {
             throw new RuntimeException("markFailed failed", e);
         }
     }
-    
-    /**
-     * Map ResultSet row to Job object
-     */
+
     private Job mapRow(ResultSet rs) throws SQLException {
         Job job = new Job();
         job.setId(rs.getLong("id"));
@@ -387,14 +314,12 @@ public class JobDAO {
         job.setNeutral(rs.getDouble("neutral"));
         job.setMessage(rs.getString("message"));
         
-        // Handle embedding vector
         try {
             String embeddingStr = rs.getString("embedding");
             if (embeddingStr != null && !embeddingStr.trim().isEmpty()) {
                 job.setEmbedding(EmbeddingUtil.pgVectorToArray(embeddingStr));
             }
         } catch (SQLException e) {
-            // Embedding column might not exist or be null - ignore
             Logger.debug("       - Embedding không có hoặc null");
         }
         

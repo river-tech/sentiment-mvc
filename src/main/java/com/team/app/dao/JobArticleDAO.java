@@ -8,9 +8,6 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
 
-/**
- * JobArticleDAO - Data Access Object for JobArticle entity
- */
 public class JobArticleDAO {
     private DataSource dataSource;
     
@@ -32,9 +29,6 @@ public class JobArticleDAO {
         return dataSource;
     }
 
-    /**
-     * Find all articles by job ID
-     */
     public List<JobArticle> findByJobId(int jobId) {
         Logger.info("[JobArticleDAO] Đang lấy articles từ DB cho job ID: " + jobId);
         String sql = "SELECT id, job_id, title, url, description, sentiment, created_at " +
@@ -59,18 +53,12 @@ public class JobArticleDAO {
             throw new RuntimeException("findByJobId failed", e);
         }
         
-        Logger.info("[JobArticleDAO] ✅ Đã lấy được " + articles.size() + " articles từ DB cho job ID: " + jobId);
+        Logger.info("[JobArticleDAO] Đã lấy được " + articles.size() + " articles từ DB cho job ID: " + jobId);
         return articles;
     }
-    
-    /**
-     * Insert single article for a job.
-     * Robust: handles nullable description/sentiment and enum casting.
-     */
+
     public void insert(long jobId, JobArticle article) {
         if (article == null) return;
-
-        // Kiểm tra xem cột "description" có tồn tại không để tránh lỗi SQL
         boolean hasDescription = columnExists("job_articles", "description");
 
         String sql;
@@ -112,10 +100,7 @@ ps.setObject(paramIndex, sentiment, java.sql.Types.OTHER);
             throw new RuntimeException("Failed to insert article", e);
         }
     }
-    
-    /**
-     * Delete existing articles for a job.
-     */
+
     public void deleteByJobId(long jobId) {
         String sql = "DELETE FROM job_articles WHERE job_id = ?";
         
@@ -128,9 +113,6 @@ ps.setObject(paramIndex, sentiment, java.sql.Types.OTHER);
         }
     }
     
-    /**
-     * Map ResultSet row to JobArticle object
-     */
     private JobArticle mapRow(ResultSet rs) throws SQLException {
         JobArticle article = new JobArticle();
         article.setId(rs.getLong("id"));
@@ -152,9 +134,6 @@ ps.setObject(paramIndex, sentiment, java.sql.Types.OTHER);
         return article;
     }
 
-    /**
-     * Utility - Check if a column exists in the table.
-     */
     private boolean columnExists(String tableName, String columnName) {
         try (Connection con = resolveDataSource().getConnection();
              ResultSet rs = con.getMetaData().getColumns(null, null, tableName, columnName)) {

@@ -21,7 +21,6 @@ public class DashboardServlet extends HttpServlet {
     @Override
     public void init() throws ServletException {
         super.init();
-        // Lazy initialization - only create when needed
         // This ensures DatabaseConfig has been initialized first
     }
     
@@ -43,24 +42,19 @@ public class DashboardServlet extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         
         try {
-            // Load latest job (system-wide, no user filtering)
             List<Job> jobs = getJobDAO().findAll();
             
             if (!jobs.isEmpty()) {
-                // Get the most recent job
                 Job latestJob = jobs.get(0);
                 request.setAttribute("job", latestJob);
                 
-                // Load articles for this job
                 List<JobArticle> articles = getJobArticleDAO().findByJobId(latestJob.getId().intValue());
                 request.setAttribute("articles", articles);
             } else {
-                // No jobs yet - set empty data
                 request.setAttribute("job", null);
                 request.setAttribute("articles", java.util.Collections.emptyList());
             }
         } catch (Exception e) {
-            // Log error and set empty data to prevent 500 error
             e.printStackTrace();
             request.setAttribute("job", null);
             request.setAttribute("articles", java.util.Collections.emptyList());

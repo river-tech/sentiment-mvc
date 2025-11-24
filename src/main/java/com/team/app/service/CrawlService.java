@@ -11,17 +11,8 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-/**
- * CrawlService - Fetches articles for sentiment jobs using Google News RSS.
- */
 public class CrawlService {
 
-    /**
-     * Fetch top 10 articles from Google News RSS for the provided keyword.
-     *
-     * @param keyword Keyword to search for.
-     * @return List of {@link JobArticle} instances with sentiment defaulted to neutral.
-     */
     public List<JobArticle> fetchArticles(String keyword) {
         List<JobArticle> articles = new ArrayList<>();
         if (keyword == null || keyword.isBlank()) {

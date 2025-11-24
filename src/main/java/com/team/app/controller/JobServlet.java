@@ -19,15 +19,6 @@ import java.util.List;
 import java.util.Map;
 import com.google.gson.Gson;
 
-/**
- * JobServlet - Controller for handling job-related requests
- * 
- * Handles:
- * - GET /jobs - List all jobs
- * - POST /jobs/create - Create a new job with semantic matching
- * - GET /jobs/{id} - View job details
- * - POST /jobs/{id}/delete - Delete a job
- */
 @WebServlet(name = "JobServlet", urlPatterns = {"/jobs", "/jobs/*"})
 public class JobServlet extends HttpServlet {
     
@@ -57,12 +48,11 @@ public class JobServlet extends HttpServlet {
         
         if ("/create".equals(path)) {
             Logger.info("═══════════════════════════════════════════════════════");
-            Logger.info("📥 [JobServlet] Nhận request tạo job mới");
+            Logger.info(" [JobServlet] Nhận request tạo job mới");
             Logger.info("   Method: " + request.getMethod());
             Logger.info("   Content-Type: " + request.getContentType());
             Logger.info("   Content-Length: " + request.getContentLength());
             
-            // Debug: log all parameters
             java.util.Enumeration<String> paramNames = request.getParameterNames();
             Logger.info("   Parameters:");
             while (paramNames.hasMoreElements()) {
@@ -71,11 +61,9 @@ public class JobServlet extends HttpServlet {
                 Logger.info("      - " + paramName + " = " + paramValue);
             }
             
-            // Get keyword from request
             String keyword = request.getParameter("keyword");
             Logger.info("   Keyword (from getParameter): " + keyword);
             
-            // Try reading from request body if parameter is null
             if (keyword == null || keyword.trim().isEmpty()) {
                 try {
                     java.io.BufferedReader reader = request.getReader();
@@ -86,7 +74,6 @@ public class JobServlet extends HttpServlet {
                     }
                     Logger.info("   Request body: " + body.toString());
                     
-                    // Try parsing URL-encoded body
                     if (body.length() > 0) {
                         String bodyStr = body.toString();
                         String[] pairs = bodyStr.split("&");
@@ -109,7 +96,7 @@ public class JobServlet extends HttpServlet {
             }
             
             if (keyword == null || keyword.trim().isEmpty()) {
-                Logger.warn("   ❌ Keyword rỗng, từ chối request");
+                Logger.warn("  Keyword rỗng, từ chối request");
                 if (isAjax(request)) {
                     Map<String, Object> errorPayload = new HashMap<>();
                     errorPayload.put("error", "Vui lòng nhập từ khóa");
@@ -121,46 +108,41 @@ public class JobServlet extends HttpServlet {
                 return;
             }
             
-            Logger.info("   🔄 Bắt đầu xử lý keyword (ứng dụng không cần đăng nhập)...");
+            Logger.info("   Bắt đầu xử lý keyword (ứng dụng không cần đăng nhập)...");
             
             try {
-                // Process keyword: get embedding, find similar job, or create new
-                // Jobs are now system-wide, no user_id needed
                 Job job = keywordService.processKeyword(keyword);
                 
-                Logger.info("   ✅ Job được tạo/tìm thấy:");
+                Logger.info("   Job được tạo/tìm thấy:");
                 Logger.info("      - Job ID: " + job.getId());
                 Logger.info("      - Status: " + job.getStatus());
                 Logger.info("      - Keyword: " + job.getKeyword());
                 
-                // If job is QUEUED (newly created), submit to queue
                 if ("QUEUED".equals(job.getStatus())) {
-                    Logger.info("   📤 Submit job vào JobQueue để xử lý background");
+                    Logger.info("   Submit job vào JobQueue để xử lý background");
                     JobQueue.getInstance().submit(job.getId());
-                    Logger.info("      ✅ Job ID " + job.getId() + " đã được thêm vào queue");
+                    Logger.info("      Job ID " + job.getId() + " đã được thêm vào queue");
                 } else {
-                    Logger.info("   ℹ️  Job status: " + job.getStatus() + " - không cần submit vào queue");
-                    Logger.info("   📋 Đây là job tương tự (similar) - articles sẽ được lấy từ DB");
+                    Logger.info("   ℹ Job status: " + job.getStatus() + " - không cần submit vào queue");
+                    Logger.info("    Đây là job tương tự (similar) - articles sẽ được lấy từ DB");
                 }
 
-                // If AJAX request, return JSON instead of redirect
                 if (isAjax(request)) {
                     Map<String, Object> payload = new HashMap<>();
-                    // Convert Long to String to avoid precision loss in JavaScript
                     payload.put("jobId", String.valueOf(job.getId()));
                     payload.put("status", job.getStatus());
                     payload.put("keyword", job.getKeyword());
-                    Logger.info("   📤 AJAX response: jobId=" + job.getId() + ", status=" + job.getStatus());
+                    Logger.info("    AJAX response: jobId=" + job.getId() + ", status=" + job.getStatus());
                     writeJson(response, payload);
                     return;
                 }
 
-                Logger.info("   ✅ Hoàn tất xử lý, redirect về dashboard");
+                Logger.info("   Hoàn tất xử lý, redirect về dashboard");
                 Logger.info("═══════════════════════════════════════════════════════");
                 response.sendRedirect(request.getContextPath() + "/dashboard");
                 
             } catch (IOException e) {
-                Logger.error("   ❌ Lỗi khi gọi API embedding", e);
+                Logger.error("    Lỗi khi gọi API embedding", e);
                 if (isAjax(request)) {
                     Map<String, Object> errorPayload = new HashMap<>();
                     errorPayload.put("error", "Lỗi khi gọi API embedding: " + e.getMessage());
@@ -170,7 +152,7 @@ public class JobServlet extends HttpServlet {
                     request.getRequestDispatcher("/WEB-INF/views/dashboard.jsp").forward(request, response);
                 }
             } catch (Exception e) {
-                Logger.error("   ❌ Lỗi khi xử lý từ khóa", e);
+                Logger.error("    Lỗi khi xử lý từ khóa", e);
                 if (isAjax(request)) {
                     Map<String, Object> errorPayload = new HashMap<>();
                     errorPayload.put("error", "Lỗi khi xử lý từ khóa: " + e.getMessage());
@@ -225,7 +207,6 @@ public class JobServlet extends HttpServlet {
                 writeJson(response, payload);
                 return;
             }
-            // Convert Long to String to avoid precision loss in JavaScript
             payload.put("jobId", String.valueOf(job.getId()));
             payload.put("status", job.getStatus());
             payload.put("positive", job.getPositive());

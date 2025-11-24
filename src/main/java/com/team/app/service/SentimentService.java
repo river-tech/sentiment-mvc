@@ -12,18 +12,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * SentimentService - Flask API based sentiment analysis.
- * Calls Python service http://127.0.0.1:9697/sentiment
- * Replaces old rule-based classifier.
- */
+
 public class SentimentService {
 
     private static final String API_URL = "http://127.0.0.1:9697/sentiment";
 
-    /**
-     * Analyze a list of articles and return percentage distribution map.
-     */
     public Map<String, Double> analyze(List<JobArticle> articles) {
         SentimentStats stats = analyzeInternal(articles);
         if (stats.getTotal() == 0) {
@@ -37,24 +30,13 @@ public class SentimentService {
         return result;
     }
 
-    /**
-     * Analyze sentiment for a list of articles and return computed statistics.
-     */
     public SentimentStats analyzeArticles(List<JobArticle> articles) {
         return analyzeInternal(articles);
     }
-
-    /**
-     * Analyze a single article and return the sentiment label.
-     */
     public String analyzeSentiment(JobArticle article) {
         return classifyArticle(article);
     }
 
-    /**
-     * Analyze articles currently stored for a given job and update their sentiment labels.
-     * This helper can be used for manual reprocessing scenarios.
-     */
     public SentimentStats batchAnalyzeSentiment(List<JobArticle> articles) {
         return analyzeInternal(articles);
     }
@@ -86,9 +68,6 @@ public class SentimentService {
         return stats;
     }
 
-    /**
-     * Classify single article by calling Flask API
-     */
     private String classifyArticle(JobArticle article) {
         if (article == null) return "neutral";
 
@@ -101,8 +80,7 @@ public class SentimentService {
 
         try {
             HttpClient client = HttpClient.newHttpClient();
-            
-            // Properly escape JSON string
+
             String escapedText = text
                     .replace("\\", "\\\\")
                     .replace("\"", "\\\"")
@@ -124,8 +102,7 @@ public class SentimentService {
             if (response.statusCode() == 200) {
                 JSONObject obj = new JSONObject(response.body());
                 String label = obj.optString("label", "neutral").toLowerCase();
-                
-                // Normalize label to expected values
+
                 if (label.equals("pos") || label.equals("positive")) {
                     return "positive";
                 } else if (label.equals("neg") || label.equals("negative")) {
@@ -154,9 +131,6 @@ public class SentimentService {
         return result;
     }
 
-    /**
-     * Immutable statistics record.
-     */
     public static class SentimentStats {
         private final int positiveCount;
         private final int negativeCount;
