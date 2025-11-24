@@ -27,3 +27,9 @@ node_modules/
 # Tomcat exploded directories (if copied here by mistake)
 sentiment-mvc/
 
+# Python virtual environments
+venv/
+.venv/
+env/
+**/venv/
+
