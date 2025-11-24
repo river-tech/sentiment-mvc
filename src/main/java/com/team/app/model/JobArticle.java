@@ -3,17 +3,13 @@ package com.team.app.model;
 import java.sql.Timestamp;
 import java.util.Objects;
 
-/**
- * JobArticle - Entity model representing an article within a sentiment analysis job
- * Mapped to table: job_articles
- */
 public class JobArticle {
     private Long id;
     private Long jobId;
     private String title;
     private String description;
     private String url;
-    private String sentiment; // positive, negative, neutral
+    private String sentiment; 
     private Timestamp createdAt;
 
     public JobArticle() {}
@@ -26,7 +22,6 @@ public class JobArticle {
         this.sentiment = sentiment;
     }
 
-    // ==== Getters & Setters ====
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
@@ -48,7 +43,6 @@ public class JobArticle {
     public Timestamp getCreatedAt() { return createdAt; }
     public void setCreatedAt(Timestamp createdAt) { this.createdAt = createdAt; }
 
-    // ==== equals() & hashCode() ====
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -62,7 +56,6 @@ public class JobArticle {
         return Objects.hash(id);
     }
 
-    // ==== toString() ====
     @Override
     public String toString() {
         return "JobArticle{" +

@@ -4,23 +4,19 @@ import java.sql.Timestamp;
 import java.util.List;
 import java.util.Objects;
 
-/**
- * Job - Entity model representing a sentiment analysis job
- * Mapped to table: jobs
- */
 public class Job {
     private Long id;
-    private String keyword;   // thay vì name → thống nhất theo DB
-    private String status;    // QUEUED, RUNNING, DONE, FAILED
+    private String keyword;   
+    private String status;    
     private int progress;
     private double positive;
     private double negative;
     private double neutral;
     private String message;
-    private double[] embedding; // embedding vector(384) for semantic matching
+    private double[] embedding;
     private Timestamp createdAt;
     private Timestamp updatedAt;
-    private List<JobArticle> articles; // one-to-many relationship
+    private List<JobArticle> articles; 
 
     public Job() {}
 
@@ -30,7 +26,7 @@ public class Job {
         this.progress = 0;
     }
 
-    // ==== Getters & Setters ====
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
@@ -67,7 +63,6 @@ public class Job {
     public List<JobArticle> getArticles() { return articles; }
     public void setArticles(List<JobArticle> articles) { this.articles = articles; }
 
-    // ==== equals() & hashCode() ====
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -81,7 +76,6 @@ public class Job {
         return Objects.hash(id);
     }
 
-    // ==== toString() ====
     @Override
     public String toString() {
         return "Job{" +

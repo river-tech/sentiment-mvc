@@ -4,14 +4,10 @@ import java.sql.Timestamp;
 import java.util.Arrays;
 import java.util.Objects;
 
-/**
- * KeywordEmbedding - represents stored embedding vector for a keyword
- * Mapped to table: keyword_embeddings
- */
 public class KeywordEmbedding {
     private Long id;
     private String keyword;
-    private float[] embedding; // pgvector field
+    private float[] embedding; 
     private Timestamp createdAt;
 
     public KeywordEmbedding() {}
@@ -21,7 +17,6 @@ public class KeywordEmbedding {
         this.embedding = embedding;
     }
 
-    // ==== Getters & Setters ====
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
@@ -34,7 +29,6 @@ public class KeywordEmbedding {
     public Timestamp getCreatedAt() { return createdAt; }
     public void setCreatedAt(Timestamp createdAt) { this.createdAt = createdAt; }
 
-    // ==== equals() & hashCode() ====
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -48,7 +42,6 @@ public class KeywordEmbedding {
         return Objects.hash(id, keyword);
     }
 
-    // ==== toString() ====
     @Override
     public String toString() {
         return "KeywordEmbedding{" +

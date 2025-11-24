@@ -157,4 +157,15 @@ def status():
 # ⚙️ Run Flask server
 # ======================================================
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=9697, debug=False)
+    # Helpful startup log & robust handling for binding errors on Windows
+    host = "0.0.0.0"
+    port = 9697
+    logging.info(f"🚦 Starting Flask embedding API on http://{host}:{port} (use_reloader=False)")
+    try:
+        # On Windows use_reloader=True can spawn multiple processes causing file-lock/bind issues
+        app.run(host=host, port=port, debug=False, use_reloader=False)
+    except OSError as e:
+        logging.error(f"❌ Failed to start Flask server on {host}:{port} - {e}")
+        logging.error("If you see 'Address already in use' or 'Permission denied', check if the port is free and try another port.")
+        logging.error("To run: `python embedding/embedding_api.py` or `python -m embedding.embedding_api` from project root.")
+        raise
