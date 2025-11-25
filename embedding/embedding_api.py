@@ -6,28 +6,16 @@ from transformers import AutoTokenizer, AutoModelForSequenceClassification
 import torch
 from torch.nn.functional import softmax
 
-# ======================================================
-# ⚙️ Cấu hình logging
-# ======================================================
 logging.basicConfig(
     level=logging.INFO,
     format="[%(asctime)s] %(levelname)s: %(message)s"
 )
 
-# ======================================================
-# 🚀 Khởi tạo Flask app
-# ======================================================
 app = Flask(__name__)
 
-# ======================================================
-# 🧠 Model embedding (đa ngôn ngữ, nhẹ)
-# ======================================================
 EMBED_MODEL_NAME = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
 embed_model = SentenceTransformer(EMBED_MODEL_NAME)
 
-# ======================================================
-# 💬 Model sentiment (PhoBERT-base fine-tuned cho tiếng Việt)
-# ======================================================
 SENTIMENT_MODEL_NAME = "wonrax/phobert-base-vietnamese-sentiment"
 DEVICE = "cuda" if torch.cuda.is_available() else ("mps" if torch.backends.mps.is_available() else "cpu")
 
@@ -35,25 +23,18 @@ logging.info(f"🧠 Loading sentiment model on device: {DEVICE}")
 sent_tokenizer = AutoTokenizer.from_pretrained(SENTIMENT_MODEL_NAME)
 sent_model = AutoModelForSequenceClassification.from_pretrained(SENTIMENT_MODEL_NAME).to(DEVICE)
 
-# Map nhãn model → label thống nhất (cho Java backend)
 LABEL_MAP = {
     "LABEL_0": "negative",
     "LABEL_1": "positive",
     "LABEL_2": "neutral"
 }
 
-# ======================================================
-# Trạng thái runtime
-# ======================================================
 startup_time = time.time()
 request_count = {"embed": 0, "sentiment": 0}
 
-logging.info(f"✅ Loaded models:\n - Embed: {EMBED_MODEL_NAME}\n - Sentiment: {SENTIMENT_MODEL_NAME}")
+logging.info(f" Loaded models:\n - Embed: {EMBED_MODEL_NAME}\n - Sentiment: {SENTIMENT_MODEL_NAME}")
 
 
-# ======================================================
-# 1️⃣ API: tạo embedding từ keyword
-# ======================================================
 @app.route("/embed", methods=["POST"])
 def embed():
     start_time = time.time()
@@ -63,7 +44,7 @@ def embed():
     if not keyword:
         return jsonify({"error": "Missing 'keyword'"}), 400
 
-    logging.info(f"📩 /embed keyword: {keyword}")
+    logging.info(f" /embed keyword: {keyword}")
     emb = embed_model.encode(keyword).tolist()
     response = {
         "keyword": keyword,
@@ -75,10 +56,6 @@ def embed():
     logging.info(f"⏱️ /embed response time: {elapsed:.2f} ms")
     return jsonify(response)
 
-
-# ======================================================
-# 2️⃣ API: phân tích cảm xúc văn bản dài
-# ======================================================
 @app.route("/sentiment", methods=["POST"])
 def analyze_sentiment():
     start_time = time.time()
@@ -89,9 +66,8 @@ def analyze_sentiment():
     if not text:
         return jsonify({"error": "Missing 'text'"}), 400
 
-    logging.info(f"🧠 /sentiment text: {text[:80]}...")
+    logging.info(f" /sentiment text: {text[:80]}...")
 
-    # Tokenize + predict
     inputs = sent_tokenizer(
         text,
         return_tensors="pt",
@@ -104,12 +80,10 @@ def analyze_sentiment():
         logits = sent_model(**inputs).logits
         probs = softmax(logits, dim=-1)[0].cpu().numpy()
 
-    # Xác suất từng lớp
     neg = float(probs[0])
     pos = float(probs[1])
     neu = float(probs[2])
 
-    # ✅ Quy tắc custom theo confidence
     if pos > 0.7:
         label = "positive"
         confidence = pos
@@ -118,21 +92,18 @@ def analyze_sentiment():
         confidence = neg
     else:
         label = "neutral"
-        confidence = max(neu, pos, neg)  # confidence lấy max lớp hiện tại
+        confidence = max(neu, pos, neg)  
 
     result = {
         "label": label,
         "confidence": round(confidence, 4),
     }
 
-    logging.info(f"✅ Custom Sentiment result: {result}")
+    logging.info(f" Custom Sentiment result: {result}")
     elapsed = (time.time() - start_time) * 1000
-    logging.info(f"⏱️ /sentiment response time: {elapsed:.2f} ms")
+    logging.info(f"sentiment response time: {elapsed:.2f} ms")
     return jsonify(result)
 
-# ======================================================
-# 3️⃣ API: kiểm tra trạng thái server
-# ======================================================
 @app.route("/status", methods=["GET"])
 def status():
     start_time = time.time()
@@ -149,23 +120,18 @@ def status():
         "ready": True
     })
     elapsed = (time.time() - start_time) * 1000
-    logging.info(f"⏱️ /status response time: {elapsed:.2f} ms")
+    logging.info(f"status response time: {elapsed:.2f} ms")
     return resp
 
 
-# ======================================================
-# ⚙️ Run Flask server
-# ======================================================
 if __name__ == "__main__":
-    # Helpful startup log & robust handling for binding errors on Windows
     host = "0.0.0.0"
     port = 9697
-    logging.info(f"🚦 Starting Flask embedding API on http://{host}:{port} (use_reloader=False)")
+    logging.info(f" Starting Flask embedding API on http://{host}:{port} (use_reloader=False)")
     try:
-        # On Windows use_reloader=True can spawn multiple processes causing file-lock/bind issues
         app.run(host=host, port=port, debug=False, use_reloader=False)
     except OSError as e:
-        logging.error(f"❌ Failed to start Flask server on {host}:{port} - {e}")
+        logging.error(f"Failed to start Flask server on {host}:{port} - {e}")
         logging.error("If you see 'Address already in use' or 'Permission denied', check if the port is free and try another port.")
         logging.error("To run: `python embedding/embedding_api.py` or `python -m embedding.embedding_api` from project root.")
         raise
