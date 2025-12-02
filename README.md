@@ -150,12 +150,12 @@ sentiment-mvc/
                               │
                               ▼
 ┌─────────────────────────────────────────────────────────────────────┐
-│  BACKGROUND PROCESSING: WorkerThread (Tính toán lớn - 30% điểm)   │
-│  ┌──────────────────────────────────────────────────────────────┐  │
-│  │ 1. Lấy jobId từ JobQueue (BlockingQueue)                     │  │
+│  BACKGROUND PROCESSING: WorkerThread (Tính toán lớn - 30% điểm)     │
+│  ┌──────────────────────────────────────────────────────────────┐   │
+│  │ 1. Lấy jobId từ JobQueue (BlockingQueue)                     │   │
 │  │ 2. Update status = "RUNNING"                                 │  │
 │  │ 3. CrawlService.fetchArticles() → Crawl 10 articles từ RSS   │  │
-│  │ 4. Với mỗi article:                                           │  │
+│  │ 4. Với mỗi article:                                          │  │
 │  │    - Gọi SentimentService.classifyArticle()                  │  │
 │  │    - SentimentService gọi Flask API /sentiment               │  │
 │  │    - Lưu article vào DB (JobArticleDAO.insert)                │  │
